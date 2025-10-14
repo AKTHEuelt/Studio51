@@ -1,9 +1,10 @@
 "use client";
 
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import Image from "next/image";
+import { useState, useEffect } from "react"; // Import React hooks
 import Toolbar from "../components/Toolbar";
-import Waveform from "../components/WaveForm"; // Importerer den eksterne komponenten
+import Waveform from "../components/WaveForm";
 
 // --- PAGE STYLES AND COMPONENTS ---
 
@@ -63,13 +64,12 @@ const HeroSection = styled.section`
   width: 100%;
 `;
 
-// NEW: Wrapper to group and align hero content
 const HeroContentWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-top: 5rem;
-  gap: 2rem; /* Creates consistent space between title, keywords, and waveform */
+  gap: 2rem;
 `;
 
 const Section = styled.section`
@@ -82,18 +82,38 @@ const Section = styled.section`
   width: 100%;
 `;
 
+// NEW: Animation for the blinking cursor
+const blink = keyframes`
+  50% { opacity: 0; }
+`;
+
+// NEW: Styled component for the cursor
+const Cursor = styled.span`
+  animation: ${blink} 1s step-end infinite;
+  color: #ff9800; /* Orange cursor */
+`;
+
 const Title = styled.h1`
   color: #ffffff;
   background-color: #000000;
   padding: 0.5rem 1rem;
   font-size: 6rem;
   font-weight: bold;
-  /* margin-bottom: 1rem; // This is now handled by the gap in HeroContentWrapper */
   text-transform: uppercase;
   letter-spacing: 2px;
+  /* Add a min-height to prevent layout shifts when text is empty */
+  min-height: 100px; 
+  display: inline-flex;
+  align-items: center;
 
-  @media (max-width: 768px) { font-size: 4rem; }
-  @media (max-width: 480px) { font-size: 2.5rem; }
+  @media (max-width: 768px) { 
+    font-size: 4rem; 
+    min-height: 70px;
+  }
+  @media (max-width: 480px) { 
+    font-size: 2.5rem; 
+    min-height: 50px;
+  }
 `;
 
 const SubTitle = styled.h2`
@@ -114,12 +134,12 @@ const ContentContainer = styled.div`
   background-color: rgba(0, 0, 0, 0.6);
   border: 1px solid #333;
   padding: 1rem;
-  text-align: center; /* Center the keywords text */
+  text-align: center;
   max-width: 1000px;
   margin: 0 auto;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center; /* Horizontally center the keywords */
+  justify-content: center;
   align-content: flex-start;
   gap: 0.5rem;
 `;
@@ -145,13 +165,12 @@ const ImageGalleryContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
-  margin-top: 3rem; /* Adds space below the keywords */
+  margin-top: 3rem;
 `;
 
-// NEW: Wrapper for each gallery image for styling and hover effects
 const GalleryImageWrapper = styled.div`
   width: 100%;
-  aspect-ratio: 1 / 1; /* Creates perfect squares */
+  aspect-ratio: 1 / 1;
   position: relative;
   overflow: hidden;
   border-radius: 8px;
@@ -163,7 +182,6 @@ const GalleryImageWrapper = styled.div`
     box-shadow: 0 8px 25px rgba(255, 152, 0, 0.3);
   }
 
-  /* Styling for the Next.js Image component inside */
   img {
     transition: transform 0.4s ease;
   }
@@ -182,9 +200,7 @@ const galleryImages = [
   { src: '/Grupper/6.jpeg', alt: 'Music production equipment' },
   { src: '/Grupper/7.jpg', alt: 'Music production equipment' },
   { src: '/Grupper/8.png', alt: 'Music production equipment' },
-
 ];
-
 
 const KeywordsContainer = styled(ContentContainer)``;
 
@@ -249,78 +265,110 @@ const coreValues: WordItem[] = [
 
 
 export default function Home() {
+  // NEW: State and logic for the typewriter effect
+  const [wordIndex, setWordIndex] = useState(0);
+  const [text, setText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const wordsToType = ["Studio 51", "Rap Clinic"];
+  const typingSpeed = 150;
+  const deletingSpeed = 100;
+  const delay = 2000;
+
+  useEffect(() => {
+    const handleTyping = () => {
+      const currentWord = wordsToType[wordIndex];
+      const updatedText = isDeleting
+        ? currentWord.substring(0, text.length - 1)
+        : currentWord.substring(0, text.length + 1);
+
+      setText(updatedText);
+
+      if (!isDeleting && updatedText === currentWord) {
+        setTimeout(() => setIsDeleting(true), delay);
+      } else if (isDeleting && updatedText === '') {
+        setIsDeleting(false);
+        setWordIndex((prevIndex) => (prevIndex + 1) % wordsToType.length);
+      }
+    };
+
+    const timeout = setTimeout(handleTyping, isDeleting ? deletingSpeed : typingSpeed);
+    return () => clearTimeout(timeout);
+  }, [text, isDeleting, wordIndex]);
+
+
   return (
-    <PageContainer>
+    <>
       <Toolbar />
-      <MainContent>
-        <SectionContainer>
-          <HeroSection id="home">
-            <HeroContentWrapper>
-              <Title>Studio 51</Title>
+      <PageContainer>
+        <MainContent>
+          <SectionContainer>
+            <HeroSection id="home">
+              <HeroContentWrapper>
+                <Title>{text}<Cursor>|</Cursor></Title>
+                <ContentContainer>
+                  {homeWords.map((word, index) => (
+                    <ContentWord key={index}>{word.word}</ContentWord>
+                  ))}
+                </ContentContainer>
+                <Waveform />
+              </HeroContentWrapper>
+            </HeroSection>
+
+            <Section id="about">
+              <SubTitle>Om Oss</SubTitle>
               <ContentContainer>
-                {homeWords.map((word, index) => (
+                {aboutWords.map((word, index) => (
                   <ContentWord key={index}>{word.word}</ContentWord>
                 ))}
               </ContentContainer>
-              <Waveform />
-            </HeroContentWrapper>
-          </HeroSection>
+            </Section>
 
-          <Section id="about">
-            <SubTitle>Om Oss</SubTitle>
-            <ContentContainer>
-              {aboutWords.map((word, index) => (
-                <ContentWord key={index}>{word.word}</ContentWord>
-              ))}
-            </ContentContainer>
-          </Section>
+            <Section id="events">
+              <SubTitle>Arrangementer</SubTitle>
+              <ContentContainer>
+                {eventsWords.map((word, index) => (
+                  <ContentWord key={index}>{word.word}</ContentWord>
+                ))}
+              </ContentContainer>
+              
+              <ImageGalleryContainer>
+                {galleryImages.map((image, index) => (
+                  <GalleryImageWrapper key={index}>
+                    <Image
+                      src={image.src}
+                      alt={image.alt}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  </GalleryImageWrapper>
+                ))}
+              </ImageGalleryContainer>
+            </Section>
 
-          <Section id="events">
-            <SubTitle>Arrangementer</SubTitle>
-            <ContentContainer>
-              {eventsWords.map((word, index) => (
-                <ContentWord key={index}>{word.word}</ContentWord>
-              ))}
-            </ContentContainer>
-            
-            {/* NEW: Image Gallery Implementation */}
-            <ImageGalleryContainer>
-              {galleryImages.map((image, index) => (
-                <GalleryImageWrapper key={index}>
-                  <Image
-                    src={image.src}
-                    alt={image.alt}
-                    fill
-                    style={{ objectFit: 'cover' }}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
-                </GalleryImageWrapper>
-              ))}
-            </ImageGalleryContainer>
-          </Section>
+            <Section id="contact">
+              <SubTitle>Kontakt</SubTitle>
+              <ContentContainer>
+                {contactWords.map((word, index) => (
+                  <ContentWord key={index}>{word.word}</ContentWord>
+                ))}
+              </ContentContainer>
+            </Section>
 
-          <Section id="contact">
-            <SubTitle>Kontakt</SubTitle>
-            <ContentContainer>
-              {contactWords.map((word, index) => (
-                <ContentWord key={index}>{word.word}</ContentWord>
-              ))}
-            </ContentContainer>
-          </Section>
-
-          <Section id="values">
-            <SubTitle>Våre Verdier</SubTitle>
-            <KeywordsContainer>
-              {coreValues.map((item, index) => (
-                <Keyword key={index} style={{ fontSize: item.size }}>
-                  {item.word}
-                </Keyword>
-              ))}
-            </KeywordsContainer>
-          </Section>
-        </SectionContainer>
-      </MainContent>
-      <Footer>Kontakt oss: 91773008 | Studio 51 - Musikk, Fellesskap og Mestring</Footer>
-    </PageContainer>
+            <Section id="values">
+              <SubTitle>Våre Verdier</SubTitle>
+              <KeywordsContainer>
+                {coreValues.map((item, index) => (
+                  <Keyword key={index} style={{ fontSize: item.size }}>
+                    {item.word}
+                  </Keyword>
+                ))}
+              </KeywordsContainer>
+            </Section>
+          </SectionContainer>
+        </MainContent>
+        <Footer>Kontakt oss: 91773008 | Studio 51 - Musikk, Fellesskap og Mestring</Footer>
+      </PageContainer>
+    </>
   );
 }
