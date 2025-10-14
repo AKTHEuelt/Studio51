@@ -12,8 +12,8 @@
 
 html,
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
+  max-width: 100%;
+  overflow-x: hidden; /* Also a good practice to prevent any accidental horizontal scroll */
 }
 
 body {
